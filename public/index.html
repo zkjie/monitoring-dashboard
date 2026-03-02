@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenClaw Monitor</title>
+    <title>OpenClaw 监控看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .card { background-color: #1e293b; color: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem; }
@@ -13,42 +13,51 @@
     </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen p-8">
-    <h1 class="text-3xl font-bold mb-8">Dashboard 🍬 Thaumatin</h1>
-    
-    <div id="loading" class="text-center text-xl mt-12">Loading...</div>
-    
-    <div id="content" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
-        <!-- 1. Server Stats -->
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Server Status</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div><p class="label">Hostname</p><p id="hostname" class="value"></p></div>
-                <div><p class="label">Platform</p><p id="platform" class="value"></p></div>
-                <div><p class="label">CPU Usage</p><p id="cpu" class="value"></p></div>
-                <div><p class="label">Mem Usage</p><p id="mem" class="value"></p></div>
-                <div><p class="label">Mem Used</p><p id="memUsed" class="value"></p></div>
-                <div><p class="label">Disk Usage</p><p id="disk" class="value"></p></div>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">OpenClaw 监控看板 🍬 Thaumatin</h1>
+            <div id="updateTime" class="text-slate-400 text-sm"></div>
+        </div>
+        
+        <div id="loading" class="text-center text-xl mt-12">加载中...</div>
+        
+        <div id="content" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+            <!-- 1. 服务器统计 -->
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">服务器状态</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><p class="label">主机名</p><p id="hostname" class="value"></p></div>
+                    <div><p class="label">操作系统</p><p id="platform" class="value"></p></div>
+                    <div><p class="label">CPU 使用率</p><p id="cpu" class="value"></p></div>
+                    <div><p class="label">内存使用率</p><p id="mem" class="value"></p></div>
+                    <div><p class="label">内存占用</p><p id="memUsed" class="value"></p></div>
+                    <div><p class="label">磁盘使用率</p><p id="disk" class="value"></p></div>
+                </div>
             </div>
-        </div>
 
-        <!-- 2. OpenClaw Skills -->
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">OpenClaw Skills</h2>
-            <div id="skillsList" class="max-h-60 overflow-y-auto"></div>
-        </div>
+            <!-- 2. OpenClaw 技能 -->
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">OpenClaw 技能情况</h2>
+                <div id="skillsList" class="max-h-60 overflow-y-auto"></div>
+                <div class="mt-4 pt-2 border-t border-slate-700">
+                    <p class="label">Token 使用量 (本会话)</p>
+                    <p id="tokens" class="text-sm text-blue-400 mt-1">查看 session_status 获取实时数据</p>
+                </div>
+            </div>
 
-        <!-- 3. Dev Tools -->
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Dev Environment</h2>
-            <div id="toolsList" class="space-y-2"></div>
-        </div>
+            <!-- 3. 开发工具列表 -->
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">开发环境工具</h2>
+                <div id="toolsList" class="space-y-2"></div>
+            </div>
 
-        <!-- 4. Env Info -->
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Env Info</h2>
-            <div class="space-y-1">
-                <div><p class="label">Shell</p><p id="shell" class="text-sm"></p></div>
-                <div><p class="label">Path</p><p id="path" class="text-xs break-all"></p></div>
+            <!-- 4. 环境信息 -->
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">环境配置</h2>
+                <div class="space-y-3">
+                    <div><p class="label">终端 Shell</p><p id="shell" class="text-sm font-mono"></p></div>
+                    <div><p class="label">系统路径 (PATH)</p><p id="path" class="text-xs break-all font-mono opacity-80"></p></div>
+                </div>
             </div>
         </div>
     </div>
@@ -70,19 +79,24 @@
                 skillsDiv.innerHTML = data.openclaw.skills.map(s => `<span class="badge">${s}</span>`).join('');
 
                 const toolsDiv = document.getElementById('toolsList');
-                toolsDiv.innerHTML = data.tools.map(t => `<div class="flex justify-between border-b border-slate-800 py-1"><span>${t.name}</span><span class="text-slate-400 text-sm">${t.version}</span></div>`).join('');
+                toolsDiv.innerHTML = data.tools.map(t => `
+                    <div class="flex justify-between border-b border-slate-800 py-1">
+                        <span class="font-medium">${t.name}</span>
+                        <span class="text-slate-400 text-sm font-mono">${t.version}</span>
+                    </div>`).join('');
 
-                document.getElementById('shell').innerText = data.env.SHELL || 'N/A';
-                document.getElementById('path').innerText = data.env.PATH || 'N/A';
+                document.getElementById('shell').innerText = data.env.SHELL || '未知';
+                document.getElementById('path').innerText = data.env.PATH || '未知';
 
+                document.getElementById('updateTime').innerText = '最后更新: ' + new Date().toLocaleTimeString();
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('content').classList.remove('hidden');
             } catch (err) {
-                document.getElementById('loading').innerText = 'Error: ' + err.message;
+                document.getElementById('loading').innerText = '获取数据失败: ' + err.message;
             }
         }
         fetchStats();
-        setInterval(fetchStats, 5000); // refresh every 5s
+        setInterval(fetchStats, 5000); // 5秒刷新一次
     </script>
 </body>
 </html>

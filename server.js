@@ -7,7 +7,7 @@ const path = require('path');
 
 const app = express();
 app.use(cors());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/stats', async (req, res) => {
   try {
@@ -15,7 +15,6 @@ app.get('/api/stats', async (req, res) => {
     const mem = await si.mem();
     const disk = await si.fsSize();
     
-    // 1. Server Stats
     const serverStats = {
       hostname: os.hostname(),
       platform: os.platform(),
@@ -27,21 +26,15 @@ app.get('/api/stats', async (req, res) => {
       diskUsage: disk[0] ? disk[0].use.toFixed(2) : '0'
     };
 
-    // 2. OpenClaw Skills & Token Usage (Mocking based on session_status output for now, or parsing openclaw output)
     let openclawInfo = { skills: [], tokens: 'N/A' };
     try {
-      // List skills from the known location
       const skillsOutput = execSync('ls -F /usr/lib/node_modules/openclaw/skills/').toString();
       openclawInfo.skills = skillsOutput.split('\n').filter(s => s.endsWith('/')).map(s => s.replace('/', ''));
-      
-      // Try to get token info (this is usually session-specific, we'll mock or parse openclaw status if possible)
-      // For now, providing a placeholder or parsing a simple command if available
       openclawInfo.tokens = "Check session_status for live usage"; 
     } catch (e) {
       console.error("OpenClaw parsing error", e);
     }
 
-    // 3. Dev Tools & Environment
     const devTools = [];
     const checkTool = (name, cmd) => {
       try {
@@ -52,10 +45,11 @@ app.get('/api/stats', async (req, res) => {
 
     ['node', 'npm', 'pnpm', 'docker', 'docker-compose', 'git', 'python3', 'go', 'rustc'].forEach(t => checkTool(t, t));
     
-    const envVars = ['NODE_ENV', 'SHELL', 'PATH'].reduce((acc, v) => {
-      acc[v] = process.env[v];
-      return acc;
-    }, {});
+    const envVars = {
+      NODE_ENV: process.env.NODE_ENV,
+      SHELL: process.env.SHELL,
+      PATH: process.env.PATH
+    };
 
     res.json({
       server: serverStats,
@@ -69,6 +63,6 @@ app.get('/api/stats', async (req, res) => {
 });
 
 const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
