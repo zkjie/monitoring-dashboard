@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card { background-color: #1e293b; color: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem; }
+        .label { color: #94a3b8; font-size: 0.875rem; }
+        .value { font-size: 1.125rem; font-weight: 600; }
+        .badge { background-color: #3b82f6; color: white; border-radius: 0.25rem; padding: 0.125rem 0.5rem; font-size: 0.75rem; margin: 0.125rem; display: inline-block; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-8">
+    <h1 class="text-3xl font-bold mb-8">Dashboard 🍬 Thaumatin</h1>
+    
+    <div id="loading" class="text-center text-xl mt-12">Loading...</div>
+    
+    <div id="content" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+        <!-- 1. Server Stats -->
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Server Status</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div><p class="label">Hostname</p><p id="hostname" class="value"></p></div>
+                <div><p class="label">Platform</p><p id="platform" class="value"></p></div>
+                <div><p class="label">CPU Usage</p><p id="cpu" class="value"></p></div>
+                <div><p class="label">Mem Usage</p><p id="mem" class="value"></p></div>
+                <div><p class="label">Mem Used</p><p id="memUsed" class="value"></p></div>
+                <div><p class="label">Disk Usage</p><p id="disk" class="value"></p></div>
+            </div>
+        </div>
+
+        <!-- 2. OpenClaw Skills -->
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">OpenClaw Skills</h2>
+            <div id="skillsList" class="max-h-60 overflow-y-auto"></div>
+        </div>
+
+        <!-- 3. Dev Tools -->
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Dev Environment</h2>
+            <div id="toolsList" class="space-y-2"></div>
+        </div>
+
+        <!-- 4. Env Info -->
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Env Info</h2>
+            <div class="space-y-1">
+                <div><p class="label">Shell</p><p id="shell" class="text-sm"></p></div>
+                <div><p class="label">Path</p><p id="path" class="text-xs break-all"></p></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                
+                document.getElementById('hostname').innerText = data.server.hostname;
+                document.getElementById('platform').innerText = data.server.platform;
+                document.getElementById('cpu').innerText = data.server.cpuUsage + '%';
+                document.getElementById('mem').innerText = data.server.memUsage + '%';
+                document.getElementById('memUsed').innerText = data.server.memUsed + ' / ' + data.server.memTotal;
+                document.getElementById('disk').innerText = data.server.diskUsage + '%';
+
+                const skillsDiv = document.getElementById('skillsList');
+                skillsDiv.innerHTML = data.openclaw.skills.map(s => `<span class="badge">${s}</span>`).join('');
+
+                const toolsDiv = document.getElementById('toolsList');
+                toolsDiv.innerHTML = data.tools.map(t => `<div class="flex justify-between border-b border-slate-800 py-1"><span>${t.name}</span><span class="text-slate-400 text-sm">${t.version}</span></div>`).join('');
+
+                document.getElementById('shell').innerText = data.env.SHELL || 'N/A';
+                document.getElementById('path').innerText = data.env.PATH || 'N/A';
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+            } catch (err) {
+                document.getElementById('loading').innerText = 'Error: ' + err.message;
+            }
+        }
+        fetchStats();
+        setInterval(fetchStats, 5000); // refresh every 5s
+    </script>
+</body>
+</html>
